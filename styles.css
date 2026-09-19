@@ -1,0 +1,688 @@
+/* ============================================================================
+   PROJETO: Sistema de Identificação e Busca de Veículos (Projeto de Big Data)
+   ARQUIVO: styles.css
+   ============================================================================
+   Aqui definimos TODA a aparência visual do site: cores, tipografia,
+   espaçamentos, e o layout em colunas do painel de pesquisa.
+
+   O arquivo está organizado em blocos, na mesma ordem em que os elementos
+   aparecem no index.html, para facilitar encontrar o que você precisa:
+     1. Variáveis globais (Design Tokens)
+     2. Reset básico + estilos do <body>
+     3. Cabeçalho (header)
+     4. Tela de Login
+     5. Componentes de formulário (inputs, labels, switch)
+     6. Botões
+     7. Tela do Painel (layout em 2 colunas)
+     8. Área de resultados (estado vazio + tabela)
+     9. Botão flutuante de ajuda + rodapé fixo
+     10. Classe utilitária ".hidden"
+     11. Responsividade (telas menores)
+   ========================================================================= */
+
+
+/* ----------------------------------------------------------------------
+   1. VARIÁVEIS GLOBAIS (Design Tokens)
+   ------------------------------------------------------------------------
+   Usamos "CSS Custom Properties" (as variáveis com --nome) para centralizar
+   as cores do Design System em um único lugar. Assim, se quisermos trocar
+   o azul principal do site, mudamos em UMA linha aqui, e o site inteiro
+   é atualizado automaticamente — em vez de precisar caçar a cor espalhada
+   em dezenas de regras CSS diferentes.
+------------------------------------------------------------------------- */
+:root {
+    --color-bg: #eef4fc;          /* Fundo geral da página: azul bem claro/pálido */
+    --color-primary: #1565c0;     /* Cor primária: azul vibrante dos botões principais */
+    --color-primary-dark: #0d47a1;/* Tom mais escuro do azul, usado no :hover dos botões */
+    --color-surface: #ffffff;     /* Fundo dos "cards" (branco), para contrastar com --color-bg */
+    --color-input-bg: #e4edf7;    /* Fundo suave dos inputs e cards secundários */
+    --color-border: #cbdbe6;      /* Cor das bordas delicadas de inputs e cards */
+    --color-text: #1b2733;        /* Cor principal do texto (quase preto, mais suave) */
+    --color-text-muted: #5b7290;  /* Cor de textos secundários/legendas, em azul acinzentado */
+    --color-danger: #c62828;      /* Vermelho usado para mensagens de erro */
+
+    --radius-sm: 6px;             /* Raio de borda padrão para inputs (pedido no briefing) */
+    --radius-md: 12px;            /* Raio de borda para cards maiores */
+    --shadow-card: 0 8px 24px rgba(21, 101, 192, 0.10); /* Sombra suave azulada nos cards */
+
+    --font-base: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif; /* Fonte pedida no briefing */
+}
+
+
+/* ----------------------------------------------------------------------
+   2. RESET BÁSICO + ESTILOS DO <body>
+   ------------------------------------------------------------------------
+   O seletor "*" (universal) zera margin/padding padrão que cada navegador
+   aplica de forma diferente, para termos um ponto de partida previsível.
+   "box-sizing: border-box" faz com que padding e border sejam CONTADOS
+   dentro da largura/altura do elemento (em vez de somados a ela), o que
+   evita muita dor de cabeça ao alinhar inputs e botões.
+------------------------------------------------------------------------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-base);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.5;
+
+    /* min-height: 100vh + display:flex + flex-direction:column faz o
+       <body> ocupar no mínimo a altura inteira da tela e organiza seus
+       filhos diretos (header, main, footer) em coluna. Isso é o que
+       permite o rodapé "grudar" no fim da tela mesmo quando o conteúdo
+       é curto. */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    /* Reserva espaço embaixo para o rodapé fixo não tampar conteúdo */
+    padding-bottom: 48px;
+}
+
+
+/* ----------------------------------------------------------------------
+   3. CABEÇALHO (HEADER)
+------------------------------------------------------------------------- */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* empurra header-left e header-right para as pontas */
+    gap: 16px;
+    padding: 14px 28px;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+
+    /* position: sticky mantém o cabeçalho visível no topo mesmo ao rolar
+       a página (útil quando a tabela de resultados cresce muito) */
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon svg {
+    width: 42px;
+    height: 42px;
+    display: block; /* remove o espacinho fantasma que <svg> tem como elemento inline */
+}
+
+.header-titles {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.header-subtitle {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.header-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: var(--color-primary);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-badge {
+    background-color: var(--color-primary-dark);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    padding: 6px 14px;
+    border-radius: 999px; /* 999px força um formato de "pílula" totalmente arredondado */
+}
+
+
+/* ----------------------------------------------------------------------
+   4. TELA DE LOGIN
+------------------------------------------------------------------------- */
+.login-screen {
+    /* flex: 1 faz esta <section> "esticar" e ocupar todo o espaço
+       vertical disponível dentro do <main>, o que é o que nos permite
+       centralizar o card tanto na horizontal quanto na vertical. */
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+}
+
+.login-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.shield-icon svg {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+}
+
+.login-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: var(--color-primary-dark);
+    margin-bottom: 6px;
+}
+
+.login-subtitle {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 28px;
+}
+
+.login-error {
+    text-align: left;
+    color: var(--color-danger);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.login-footer-note {
+    margin-top: 24px;
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+
+/* ----------------------------------------------------------------------
+   5. COMPONENTES DE FORMULÁRIO (inputs, labels, switch)
+   ------------------------------------------------------------------------
+   Estes estilos valem tanto para o formulário de login quanto para o
+   formulário de pesquisa do painel, já que os dois usam a mesma classe
+   ".form-group" para envolver cada "label + input".
+------------------------------------------------------------------------- */
+.form-group {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+}
+
+/* Selecionamos todo input de texto/senha dentro do site. Listar os tipos
+   explicitamente (em vez de usar apenas "input") evita estilizar, por
+   engano, inputs do tipo checkbox (usado no switch), que precisam de um
+   visual totalmente diferente. */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    background-color: var(--color-input-bg);
+
+    /* Borda "delicada", como pedido no briefing: fina e na cor --color-border,
+       em vez de uma borda grossa/pesada */
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+
+    /* transition anima suavemente a troca de cor da borda ao focar o campo,
+       em vez do contorno "pulando" de uma cor para outra instantaneamente */
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
+    color: #9db3cb; /* placeholder claro, mas ainda legível, como pedido */
+}
+
+/* :focus é aplicado automaticamente pelo navegador quando o usuário clica
+   ou navega com TAB até o campo. Aqui customizamos esse estado padrão. */
+input[type="text"]:focus,
+input[type="password"]:focus {
+    outline: none; /* removemos o contorno feio padrão do navegador... */
+    border-color: var(--color-primary); /* ...e o substituímos por isto: */
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15); /* um "halo" azul suave */
+}
+
+/* Campo de senha: o input e o botão do olho ficam um em cima do outro
+   usando position:relative no "pai" e position:absolute no botão. */
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 42px; /* abre espaço à direita para o ícone não tampar o texto digitado */
+}
+
+.toggle-password {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%); /* centraliza verticalmente com precisão */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-password svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* --- Switch (interruptor) da "PESQUISA PARCIAL" ---
+   Técnica clássica: escondemos o <input type="checkbox"> real (mas sem usar
+   display:none, para continuar acessível via teclado) e desenhamos o visual
+   do interruptor usando o <span class="switch-slider"> ao lado dele. */
+.partial-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0; /* impede o switch de "espremer" quando o label ao lado é grande */
+}
+
+.switch input {
+    /* Escondemos visualmente o checkbox original, mas mantemos ele presente
+       e funcional (opacity:0 em vez de display:none), pois é ele quem
+       realmente guarda o estado "ligado/desligado" que o JS vai consultar. */
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    position: absolute;
+    z-index: 2;
+}
+
+.switch-slider {
+    position: absolute;
+    inset: 0; /* atalho que equivale a top:0; right:0; bottom:0; left:0; */
+    background-color: var(--color-border);
+    border-radius: 999px;
+    transition: background-color 0.2s ease;
+}
+
+/* ::before cria a "bolinha" branca do switch como um pseudo-elemento,
+   sem precisar de nenhuma tag HTML extra só para isso */
+.switch-slider::before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    top: 3px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+/* Seletor de irmão adjacente (+): "quando o input:checked estiver
+   IMEDIATAMENTE seguido por um .switch-slider, estilize esse slider".
+   É assim que o CSS "sabe" que o switch está ligado, sem nenhum JS. */
+.switch input:checked + .switch-slider {
+    background-color: var(--color-primary);
+}
+
+.switch input:checked + .switch-slider::before {
+    transform: translateX(18px); /* desliza a bolinha para a direita */
+}
+
+/* Linha com os 3 campos mini: Início / Meio / Fim */
+.partial-inputs-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 colunas de largura igual */
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.form-group--mini label {
+    font-size: 0.62rem;
+    text-transform: none; /* aqui mantemos "Início/Meio/Fim" com capitalização normal */
+}
+
+.form-group--mini input {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+}
+
+
+/* ----------------------------------------------------------------------
+   6. BOTÕES
+------------------------------------------------------------------------- */
+.btn-full {
+    width: 100%;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase; /* "Botões de ação em caixa alta", pedido no briefing */
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+}
+
+/* :active é o instante em que o botão está sendo clicado/pressionado.
+   O leve "encolhimento" dá uma sensação tátil de "cliquei de verdade". */
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-primary svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-secondary {
+    background-color: var(--color-input-bg);
+    color: var(--color-primary-dark);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #d6e3f2;
+}
+
+.btn-logout {
+    background-color: transparent;
+    color: var(--color-primary-dark);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    padding: 7px 16px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-logout:hover {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+
+/* ----------------------------------------------------------------------
+   7. TELA DO PAINEL (layout em 2 colunas)
+------------------------------------------------------------------------- */
+.panel-screen {
+    flex: 1;
+    padding: 24px 28px;
+}
+
+.panel-layout {
+    /* CSS Grid é ideal aqui porque temos um layout de DUAS colunas com
+       larguras diferentes e propositais: a sidebar tem largura fixa
+       (320px) e a área de resultados ocupa "o resto" (1fr). */
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start; /* impede que a coluna mais curta "estique" para ficar do
+                            mesmo tamanho da mais alta */
+}
+
+.sidebar {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 22px;
+
+    /* Permite rolar apenas a sidebar (e não a página toda) quando o
+       formulário de filtros é mais alto que a tela do usuário */
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+}
+
+.sidebar-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    margin-bottom: 20px;
+}
+
+.sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+
+/* ----------------------------------------------------------------------
+   8. ÁREA DE RESULTADOS (estado vazio + tabela)
+------------------------------------------------------------------------- */
+.results-area {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 22px;
+    min-height: calc(100vh - 110px);
+}
+
+.results-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 60px 20px;
+    font-size: 0.9rem;
+}
+
+.empty-state-icon svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+}
+
+/* overflow-x:auto garante que, em telas estreitas, a TABELA ganhe uma
+   barra de rolagem horizontal própria — em vez de espremer as colunas
+   até ficarem ilegíveis, ou "estourar" a largura da página inteira. */
+.results-table-wrapper {
+    overflow-x: auto;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse; /* remove o espaçinho duplicado entre as bordas das células */
+}
+
+.results-table th,
+.results-table td {
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap; /* evita que "Fiat Uno Mille 1.0" quebre em 2 linhas na célula */
+}
+
+.results-table thead th {
+    background-color: var(--color-input-bg);
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* :hover na linha inteira da tabela — feedback visual de "estou passando
+   o mouse sobre este registro específico" */
+.results-table tbody tr:hover {
+    background-color: var(--color-input-bg);
+}
+
+
+/* ----------------------------------------------------------------------
+   9. BOTÃO FLUTUANTE DE AJUDA + RODAPÉ FIXO
+------------------------------------------------------------------------- */
+.help-btn {
+    /* position: fixed tira o botão do fluxo normal da página e o fixa
+       em relação à JANELA do navegador — por isso ele continua no mesmo
+       lugar mesmo se o usuário rolar a página para baixo. */
+    position: fixed;
+    right: 24px;
+    bottom: 64px; /* deixa espaço para não sobrepor o rodapé fixo */
+    width: 48px;
+    height: 48px;
+    border-radius: 50%; /* 50% em um elemento quadrado = círculo perfeito */
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(21, 101, 192, 0.35);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    z-index: 30;
+}
+
+.help-btn:hover {
+    background-color: var(--color-primary-dark);
+    transform: scale(1.06);
+}
+
+.app-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    z-index: 20;
+}
+
+
+/* ----------------------------------------------------------------------
+   10. CLASSE UTILITÁRIA ".hidden"
+   ------------------------------------------------------------------------
+   Esta é a classe "interruptor" usada pelo script.js para esconder e
+   mostrar elementos inteiros (as duas telas, a linha de pesquisa parcial,
+   a tabela de resultados, etc.). "!important" garante que ela sempre
+   vença qualquer outro "display" definido para o mesmo elemento.
+------------------------------------------------------------------------- */
+.hidden {
+    display: none !important;
+}
+
+
+/* ----------------------------------------------------------------------
+   11. RESPONSIVIDADE (telas menores, como celular)
+   ------------------------------------------------------------------------
+   @media queries aplicam um bloco de CSS somente quando a largura da
+   tela (viewport) é menor ou igual ao valor indicado. Aqui adaptamos o
+   layout de 2 colunas para empilhar em 1 coluna só em telas estreitas.
+------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+    .panel-layout {
+        grid-template-columns: 1fr; /* sidebar e resultados empilham, um embaixo do outro */
+    }
+
+    .sidebar {
+        max-height: none; /* em mobile, deixamos a página inteira rolar normalmente */
+    }
+
+    .results-area {
+        min-height: 300px;
+    }
+}
+
+@media (max-width: 560px) {
+    .app-header {
+        padding: 12px 16px;
+    }
+
+    .header-title {
+        font-size: 0.85rem;
+    }
+
+    .header-subtitle {
+        font-size: 0.6rem;
+    }
+
+    .login-card {
+        padding: 28px 22px;
+    }
+
+    .panel-screen {
+        padding: 16px;
+    }
+}
