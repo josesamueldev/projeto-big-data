@@ -240,7 +240,10 @@ body {
    engano, inputs do tipo checkbox (usado no switch), que precisam de um
    visual totalmente diferente. */
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+input[type="number"],
+select,
+textarea {
     width: 100%;
     padding: 10px 12px;
     font-family: inherit;
@@ -259,14 +262,19 @@ input[type="password"] {
 }
 
 input[type="text"]::placeholder,
-input[type="password"]::placeholder {
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+textarea::placeholder {
     color: #9db3cb; /* placeholder claro, mas ainda legível, como pedido */
 }
 
 /* :focus é aplicado automaticamente pelo navegador quando o usuário clica
    ou navega com TAB até o campo. Aqui customizamos esse estado padrão. */
 input[type="text"]:focus,
-input[type="password"]:focus {
+input[type="password"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
     outline: none; /* removemos o contorno feio padrão do navegador... */
     border-color: var(--color-primary); /* ...e o substituímos por isto: */
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15); /* um "halo" azul suave */
@@ -528,9 +536,6 @@ input[type="password"]:focus {
     font-size: 1rem;
     font-weight: 800;
     color: var(--color-primary-dark);
-    padding-bottom: 14px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid var(--color-border);
 }
 
 .empty-state {
@@ -684,5 +689,225 @@ input[type="password"]:focus {
 
     .panel-screen {
         padding: 16px;
+    }
+}
+
+
+/* ----------------------------------------------------------------------
+   12. COMPONENTES DA INTEGRAÇÃO COM A API
+   ------------------------------------------------------------------------
+   Bloco adicionado quando o front-end passou a consumir o back-end:
+   cabeçalho dos resultados, caixas de aviso, paginação e a janela modal
+   de cadastro de veículo.
+-------------------------------------------------------------------------- */
+
+/* Um item de grid tem, por padrão, largura mínima igual ao conteúdo.
+   Como a tabela de resultados é larga, ela empurraria a coluna e criaria
+   rolagem horizontal na página inteira. "min-width: 0" deixa o item
+   encolher, e a rolagem acontece apenas dentro da tabela (que já tem
+   overflow-x: auto). */
+.panel-layout > * {
+    min-width: 0;
+}
+
+/* --- Cabeçalho da área de resultados (título + botão de cadastro) --- */
+.results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Botão de ação compacto, para caber ao lado do título */
+.btn-compact {
+    padding: 9px 16px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* --- Caixa de avisos (carregando / erro / sucesso) --- */
+.results-feedback {
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-input-bg);
+    color: var(--color-primary-dark);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.results-feedback--erro {
+    background-color: #fdecea;
+    border-color: #f5c2c0;
+    color: var(--color-danger);
+}
+
+.results-feedback--sucesso {
+    background-color: #e7f5ea;
+    border-color: #bfe3c8;
+    color: #1b6e35;
+}
+
+/* --- Resumo (quantidade de registros encontrados) --- */
+.results-summary {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+}
+
+/* --- Paginação --- */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-page {
+    background-color: var(--color-input-bg);
+    color: var(--color-primary-dark);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+    background-color: #d6e3f2;
+}
+
+/* Botão desabilitado (primeira/última página) */
+.btn-page:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+/* Enquanto a pesquisa está em andamento, o botão fica esmaecido */
+.btn-primary.is-loading {
+    opacity: 0.7;
+    cursor: progress;
+}
+
+/* --- Campo de observações (textarea) --- */
+textarea {
+    min-height: 76px;
+    resize: vertical; /* o usuário pode aumentar/diminuir a altura */
+}
+
+/* --- Janela modal de cadastro --- */
+.modal-backdrop {
+    position: fixed;
+    inset: 0; /* equivale a top/right/bottom/left: 0 */
+    background-color: rgba(15, 35, 60, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    z-index: 50;
+}
+
+.modal-card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 50px rgba(13, 71, 161, 0.35);
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;      /* nunca passa da altura da tela... */
+    overflow-y: auto;      /* ...e rola por dentro quando necessário */
+    padding: 24px 26px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.modal-header h2 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.modal-close:hover {
+    color: var(--color-danger);
+}
+
+/* Duas colunas de campos no desktop; 1 coluna em telas estreitas */
+.modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+}
+
+/* Campo que ocupa a linha inteira (ex.: observações) */
+.form-group--full {
+    grid-column: 1 / -1;
+}
+
+.modal-error {
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid #f5c2c0;
+    background-color: #fdecea;
+    color: var(--color-danger);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* Campo destacado quando a API recusa aquele valor específico */
+.input-invalido {
+    border-color: var(--color-danger) !important;
+    background-color: #fdf1f0 !important;
+}
+
+@media (max-width: 640px) {
+    .modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .results-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

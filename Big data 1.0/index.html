@@ -86,8 +86,10 @@
              Começa com a classe "hidden" no HTML; o script.js remove essa
              classe quando o usuário entra com sucesso no sistema. -->
         <div class="header-right hidden" id="headerRight">
-            <!-- Badge (selo) com o número/matrícula do usuário logado -->
-            <span class="user-badge" id="userBadge">12 123456</span>
+            <!-- Badge (selo) com o nome do usuário logado. O texto começa
+                 vazio porque o script.js preenche com o nome devolvido
+                 pela API no login. -->
+            <span class="user-badge" id="userBadge"></span>
             <!-- Botão de logout. type="button" evita que ele tente enviar
                  algum formulário sem querer. -->
             <button type="button" class="btn-logout" id="logoutBtn">Sair</button>
@@ -184,7 +186,7 @@
                 <!-- Texto informativo no rodapé do card -->
                 <p class="login-footer-note">
                     Acesso exclusivo para servidores autorizados.<br>
-                    Senha de demonstração: <strong>123456</strong>
+                    Usuário de demonstração: <strong>123456</strong> / senha <strong>123456</strong>
                 </p>
             </div>
         </section>
@@ -234,20 +236,32 @@
                             </label>
                         </div>
 
-                        <!-- Essa linha com os 3 mini-inputs começa ESCONDIDA.
-                             O JS mostra/esconde de acordo com o switch acima. -->
-                        <div class="partial-inputs-row hidden" id="partialInputsRow">
-                            <div class="form-group form-group--mini">
-                                <label for="partialInicio">Início</label>
-                                <input type="text" id="partialInicio" placeholder="Início">
+                        <!-- Este bloco começa ESCONDIDO e aparece quando o
+                             switch acima é ligado. Dentro dele ficam os 3
+                             trechos e o campo (placa ou chassi) onde o
+                             trecho será procurado pela API. -->
+                        <div class="hidden" id="partialExtra">
+                            <div class="partial-inputs-row">
+                                <div class="form-group form-group--mini">
+                                    <label for="partialInicio">Início</label>
+                                    <input type="text" id="partialInicio" placeholder="Início">
+                                </div>
+                                <div class="form-group form-group--mini">
+                                    <label for="partialMeio">Meio</label>
+                                    <input type="text" id="partialMeio" placeholder="Meio">
+                                </div>
+                                <div class="form-group form-group--mini">
+                                    <label for="partialFim">Fim</label>
+                                    <input type="text" id="partialFim" placeholder="Fim">
+                                </div>
                             </div>
-                            <div class="form-group form-group--mini">
-                                <label for="partialMeio">Meio</label>
-                                <input type="text" id="partialMeio" placeholder="Meio">
-                            </div>
-                            <div class="form-group form-group--mini">
-                                <label for="partialFim">Fim</label>
-                                <input type="text" id="partialFim" placeholder="Fim">
+
+                            <div class="form-group">
+                                <label for="partialCampo">BUSCAR O TRECHO EM</label>
+                                <select id="partialCampo">
+                                    <option value="placa" selected>Placa</option>
+                                    <option value="chassi">Chassi</option>
+                                </select>
                             </div>
                         </div>
 
@@ -290,7 +304,17 @@
                      COLUNA 2 (DIREITA): Área principal com os resultados
                 ------------------------------------------------------------- -->
                 <section class="results-area">
-                    <h2 class="results-title">Resultados da Pesquisa</h2>
+                    <!-- Cabeçalho da área: título + atalho de cadastro -->
+                    <div class="results-header">
+                        <h2 class="results-title">Resultados da Pesquisa</h2>
+                        <button type="button" class="btn-primary btn-compact" id="newVehicleBtn">
+                            + NOVO VEÍCULO
+                        </button>
+                    </div>
+
+                    <!-- Caixa de avisos: "Pesquisando...", erros da API e
+                         confirmação de cadastro. Começa escondida. -->
+                    <p class="results-feedback hidden" id="resultsFeedback"></p>
 
                     <!-- Estado PADRÃO (sem pesquisa realizada ainda).
                          Fica visível até o usuário clicar em "PESQUISAR". -->
@@ -304,15 +328,19 @@
                         <p>Utilize o painel de pesquisa para buscar veículos</p>
                     </div>
 
+                    <!-- Resumo: quantos registros a API encontrou -->
+                    <p class="results-summary hidden" id="resultsSummary"></p>
+
                     <!-- Estado COM RESULTADOS.
                          Começa escondido; o script.js remove a classe "hidden"
-                         e preenche o <tbody> após o clique em "PESQUISAR". -->
+                         e preenche o <tbody> com os dados vindos da API. -->
                     <div class="results-table-wrapper hidden" id="resultsWrapper">
                         <table class="results-table">
                             <thead>
                                 <tr>
                                     <th>Placa</th>
-                                    <th>Modelo</th>
+                                    <th>Chassi</th>
+                                    <th>Marca / Modelo</th>
                                     <th>Cor</th>
                                     <th>Ano</th>
                                     <th>Proprietário</th>
@@ -322,6 +350,13 @@
                                  <tr> é criada dinamicamente pelo script.js -->
                             <tbody id="resultsTableBody"></tbody>
                         </table>
+                    </div>
+
+                    <!-- Paginação (a API devolve no máximo 20 itens por vez) -->
+                    <div class="pagination hidden" id="pagination">
+                        <button type="button" class="btn-page" id="prevPageBtn">‹ Anterior</button>
+                        <span class="page-info" id="pageInfo"></span>
+                        <button type="button" class="btn-page" id="nextPageBtn">Próxima ›</button>
                     </div>
                 </section>
             </div>
@@ -343,10 +378,92 @@
         Projeto de Big Data — Uso restrito ao serviço público
     </footer>
 
+    <!-- ========================================================================
+         JANELA MODAL DE CADASTRO DE VEÍCULO
+         Fica fora do <main> e começa escondida (classe "hidden").
+         O script.js a abre pelo botão "+ NOVO VEÍCULO", envia os dados
+         para a API e mostra os erros de validação do próprio backend.
+    ========================================================================= -->
+    <div class="modal-backdrop hidden" id="vehicleModal">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="vehicleModalTitle">
+            <div class="modal-header">
+                <h2 id="vehicleModalTitle">Registrar Novo Veículo</h2>
+                <button type="button" class="modal-close" id="closeVehicleModal" aria-label="Fechar">&times;</button>
+            </div>
+
+            <form id="vehicleForm" novalidate>
+                <!-- Mensagens de erro devolvidas pela API (409, 422...) -->
+                <p class="modal-error hidden" id="vehicleError"></p>
+
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label for="veiPlaca">PLACA *</label>
+                        <input type="text" id="veiPlaca" placeholder="ABC-1234 ou ABC1D23" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiChassi">CHASSI / VIN *</label>
+                        <input type="text" id="veiChassi" placeholder="17 caracteres" maxlength="17" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiMarca">MARCA *</label>
+                        <input type="text" id="veiMarca" placeholder="ex: Fiat" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiModelo">MODELO *</label>
+                        <input type="text" id="veiModelo" placeholder="ex: Uno Mille 1.0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiCor">COR *</label>
+                        <input type="text" id="veiCor" placeholder="ex: Prata" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiAno">ANO *</label>
+                        <input type="number" id="veiAno" placeholder="ex: 2022" min="1886" max="2100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiProprietario">PROPRIETÁRIO *</label>
+                        <input type="text" id="veiProprietario" placeholder="Nome completo ou razão social" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiCpfCnpj">CPF / CNPJ *</label>
+                        <input type="text" id="veiCpfCnpj" placeholder="ex: 000.000.000-00" required>
+                    </div>
+
+                    <div class="form-group form-group--full">
+                        <label for="veiRenavam">RENAVAM</label>
+                        <input type="text" id="veiRenavam" placeholder="opcional — 9 a 11 dígitos">
+                    </div>
+
+                    <div class="form-group form-group--full">
+                        <label for="veiObservacoes">OBSERVAÇÕES</label>
+                        <textarea id="veiObservacoes" rows="3" maxlength="500"
+                                  placeholder="opcional — anotações livres"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary btn-full" id="cancelVehicleBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary btn-full" id="saveVehicleBtn">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- O <script> fica no FINAL do <body> de propósito: assim, quando o
          script.js executa, todos os elementos HTML acima dele já existem
          na página, e document.querySelector/getElementById sempre encontram
-         os elementos (evita erros de "elemento não encontrado"). -->
+         os elementos (evita erros de "elemento não encontrado").
+
+         api.js vem primeiro porque o script.js depende das funções dele
+         (window.ApiVeiculos). -->
+    <script src="api.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
