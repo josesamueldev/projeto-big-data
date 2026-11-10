@@ -1,0 +1,15 @@
+# Dependências do backend (Back-end do Sistema de Identificação e Busca de Veículos)
+# Instale com:  py -m pip install -r requirements.txt
+
+# Framework web: expõe os endpoints REST automaticamente documentados (/docs)
+fastapi>=0.115
+
+# Servidor ASGI que roda a aplicação FastAPI em modo desenvolvimento
+uvicorn>=0.30
+
+# Geração/validação de tokens JWT para o login
+pyjwt>=2.9
+
+# Testes automatizados
+pytest>=8.0
+httpx>=0.27
