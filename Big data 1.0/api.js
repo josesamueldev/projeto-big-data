@@ -348,6 +348,28 @@ async function estatisticas() {
     return requisitar('/api/veiculos/estatisticas');
 }
 
+/*
+   ATUALIZAÇÃO DE VEÍCULO
+   PATCH /api/veiculos/{id}
+   -> 200 com o veículo atualizado
+   -> 404 se não existir
+   -> 409 se placa/chassi duplicado
+   -> 422 se campo inválido
+*/
+async function atualizarVeiculo(id, dados) {
+    return requisitar('/api/veiculos/' + id, { metodo: 'PATCH', corpo: dados });
+}
+
+/*
+   EXCLUSÃO DE VEÍCULO
+   DELETE /api/veiculos/{id}
+   -> 204 (sem corpo) se removido
+   -> 404 se não existir
+*/
+async function removerVeiculo(id) {
+    return requisitar('/api/veiculos/' + id, { metodo: 'DELETE' });
+}
+
 
 /* ----------------------------------------------------------------------
    EXPORTAÇÃO
@@ -362,6 +384,8 @@ window.ApiVeiculos = {
     obterUsuarioAtual: obterUsuarioAtual,
     pesquisar: pesquisar,
     criarVeiculo: criarVeiculo,
+    atualizarVeiculo: atualizarVeiculo,
+    removerVeiculo: removerVeiculo,
     estatisticas: estatisticas,
     obterUsuarioSalvo: obterUsuarioSalvo,
     temSessao: temSessao,

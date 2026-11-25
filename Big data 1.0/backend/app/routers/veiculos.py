@@ -8,10 +8,8 @@ Endpoints de VEÍCULOS (todos exigem token JWT):
     GET    /api/veiculos              → pesquisar (filtros + paginação)
     GET    /api/veiculos/estatisticas → totais gerais
     GET    /api/veiculos/{id}         → detalhe
-
-A API expõe SOMENTE o que o front-end usa hoje: login, pesquisa/consulta e
-registro. Edição (PATCH) e exclusão (DELETE) serão adicionadas quando as
-telas correspondentes existirem.
+    PATCH  /api/veiculos/{id}         → atualizar (200 / 404 / 409 / 422)
+    DELETE /api/veiculos/{id}         → remover (204 / 404)
 """
 
 from typing import Literal
@@ -24,6 +22,7 @@ from ..schemas import (
     VeiculoCreate,
     VeiculoListaResponse,
     VeiculoResponse,
+    VeiculoUpdate,
 )
 from ..services import veiculo_service
 from ..services.veiculo_service import VeiculoDuplicadoError
@@ -108,3 +107,45 @@ def detalhar(veiculo_id: int, _usuario: UsuarioLogadoDep) -> dict:
     if veiculo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Veículo não encontrado.")
     return veiculo
+
+
+# ---------------------------------------------------------------------------
+# ATUALIZAÇÃO
+# ---------------------------------------------------------------------------
+
+@router.patch("/{veiculo_id}", response_model=VeiculoResponse)
+def atualizar(
+    veiculo_id: int,
+    payload: VeiculoUpdate,
+    _usuario: UsuarioLogadoDep,
+) -> dict:
+    """Atualiza parcialmente um veículo (apenas campos enviados)."""
+    # remove campos None para permitir atualização parcial
+    dados = {k: v for k, v in payload.model_dump().items() if v is not None}
+
+    if not dados:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Nenhum campo para atualizar.",
+        )
+
+    try:
+        veiculo = veiculo_service.atualizar(veiculo_id, dados)
+    except VeiculoDuplicadoError as exc:
+        raise _erro_duplicidade(exc) from exc
+
+    if veiculo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Veículo não encontrado.")
+    return veiculo
+
+
+# ---------------------------------------------------------------------------
+# EXCLUSÃO
+# ---------------------------------------------------------------------------
+
+@router.delete("/{veiculo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remover(veiculo_id: int, _usuario: UsuarioLogadoDep) -> None:
+    """Remove um veículo."""
+    removido = veiculo_service.remover(veiculo_id)
+    if not removido:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Veículo não encontrado.")

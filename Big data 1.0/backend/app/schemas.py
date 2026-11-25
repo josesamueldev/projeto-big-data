@@ -107,6 +107,76 @@ class VeiculoCreate(BaseModel):
         return limpo[:500] or None
 
 
+class VeiculoUpdate(BaseModel):
+    """Corpo do PATCH /api/veiculos/{id} (atualização parcial de veículo).
+
+    Todos os campos são opcionais — envia-se apenas o que deseja alterar.
+    """
+
+    placa: str | None = Field(default=None, description="ABC-1234 ou ABC1D23 (Mercosul)")
+    chassi: str | None = Field(default=None, description="17 caracteres alfanuméricos (VIN)")
+    renavam: str | None = Field(default=None, description="Opcional, 9 a 11 dígitos")
+    marca: str | None = Field(default=None, description="Ex.: Fiat")
+    modelo: str | None = Field(default=None, description="Ex.: Uno Mille 1.0")
+    cor: str | None = Field(default=None, description="Ex.: Prata")
+    ano: int | None = Field(default=None, description="Ano de fabricação/modelo")
+    proprietario: str | None = Field(default=None, description="Nome completo ou razão social")
+    cpf_cnpj: str | None = Field(default=None, description="CPF ou CNPJ do proprietário")
+    observacoes: str | None = Field(default=None, description="Anotações livres")
+
+    # -- normalização/validação dos campos que vierem --------------------------
+
+    @field_validator("placa", mode="before")
+    @classmethod
+    def _placa(cls, valor):
+        if valor is None:
+            return None
+        return normalizar_placa(valor)
+
+    @field_validator("chassi", mode="before")
+    @classmethod
+    def _chassi(cls, valor):
+        if valor is None:
+            return None
+        return normalizar_chassi(valor)
+
+    @field_validator("renavam", mode="before")
+    @classmethod
+    def _renavam(cls, valor):
+        if valor is None:
+            return None
+        return normalizar_renavam(valor)
+
+    @field_validator("marca", "modelo", "cor", "proprietario", mode="before")
+    @classmethod
+    def _texto(cls, valor, info: ValidationInfo):
+        if valor is None:
+            return None
+        return texto_obrigatorio(valor, info.field_name)
+
+    @field_validator("ano", mode="before")
+    @classmethod
+    def _ano(cls, valor):
+        if valor is None:
+            return None
+        return validar_ano(valor)
+
+    @field_validator("cpf_cnpj", mode="before")
+    @classmethod
+    def _cpf_cnpj(cls, valor):
+        if valor is None:
+            return None
+        return normalizar_cpf_cnpj(valor)
+
+    @field_validator("observacoes", mode="before")
+    @classmethod
+    def _observacoes(cls, valor):
+        if valor is None:
+            return None
+        limpo = str(valor).strip()
+        return limpo[:500] or None
+
+
 # ===========================================================================
 # VEÍCULOS — SAÍDA
 # ===========================================================================

@@ -102,6 +102,33 @@ const veiObservacoes = document.getElementById('veiObservacoes');
 // --- Botão flutuante de ajuda ---
 const helpBtn = document.getElementById('helpBtn');
 
+// --- Janela modal de EDIÇÃO de veículo ---
+const editVehicleModal = document.getElementById('editVehicleModal');
+const editVehicleForm = document.getElementById('editVehicleForm');
+const editVehicleError = document.getElementById('editVehicleError');
+const closeEditVehicleModalBtn = document.getElementById('closeEditVehicleModal');
+const cancelEditVehicleBtn = document.getElementById('cancelEditVehicleBtn');
+const saveEditVehicleBtn = document.getElementById('saveEditVehicleBtn');
+
+const editVeiId = document.getElementById('editVeiId');
+const editVeiPlaca = document.getElementById('editVeiPlaca');
+const editVeiChassi = document.getElementById('editVeiChassi');
+const editVeiRenavam = document.getElementById('editVeiRenavam');
+const editVeiMarca = document.getElementById('editVeiMarca');
+const editVeiModelo = document.getElementById('editVeiModelo');
+const editVeiCor = document.getElementById('editVeiCor');
+const editVeiAno = document.getElementById('editVeiAno');
+const editVeiProprietario = document.getElementById('editVeiProprietario');
+const editVeiCpfCnpj = document.getElementById('editVeiCpfCnpj');
+const editVeiObservacoes = document.getElementById('editVeiObservacoes');
+
+// --- Janela modal de CONFIRMAÇÃO DE EXCLUSÃO ---
+const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+const deleteConfirmDetails = document.getElementById('deleteConfirmDetails');
+const closeDeleteConfirmModalBtn = document.getElementById('closeDeleteConfirmModal');
+const cancelDeleteConfirmBtn = document.getElementById('cancelDeleteConfirmBtn');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
 // Quantidade de registros por página (a API aceita de 1 a 200).
 const LIMITE_POR_PAGINA = 20;
 
@@ -115,6 +142,11 @@ let filtrosAtuais = {};
 let pesquisaEmAndamento = false;
 let loginEmAndamento = false;
 let salvandoVeiculo = false;
+let salvandoEdicao = false;
+let removendoVeiculo = false;
+
+// Veículo pendente de exclusão (preenchido ao abrir o modal de confirmação)
+let veiculoParaExcluir = null;
 
 // Durante a restauração automática da sessão (ao recarregar a página) não
 // vale a pena avisar "sessão expirada" — o usuário nem chegou a entrar.
@@ -133,6 +165,20 @@ const CAMPOS_DO_VEICULO = {
     proprietario: veiProprietario,
     cpf_cnpj: veiCpfCnpj,
     observacoes: veiObservacoes,
+};
+
+// Mapa para o formulário de EDIÇÃO
+const CAMPOS_DO_EDIT_VEICULO = {
+    placa: editVeiPlaca,
+    chassi: editVeiChassi,
+    renavam: editVeiRenavam,
+    marca: editVeiMarca,
+    modelo: editVeiModelo,
+    cor: editVeiCor,
+    ano: editVeiAno,
+    proprietario: editVeiProprietario,
+    cpf_cnpj: editVeiCpfCnpj,
+    observacoes: editVeiObservacoes,
 };
 
 
@@ -390,9 +436,51 @@ function renderizarTabela(itens) {
         linha.appendChild(criarCelula(veiculo.cor));
         linha.appendChild(criarCelula(String(veiculo.ano)));
         linha.appendChild(criarCelula(veiculo.proprietario));
+        linha.appendChild(criarCelulaAcoes(veiculo));
 
         resultsTableBody.appendChild(linha);
     });
+}
+
+/* Cria a célula de ações (Editar / Excluir) para um veículo. */
+function criarCelulaAcoes(veiculo) {
+    const celula = document.createElement('td');
+    celula.className = 'acoes-col';
+
+    // Botão Editar
+    const btnEditar = document.createElement('button');
+    btnEditar.type = 'button';
+    btnEditar.className = 'btn-action';
+    btnEditar.title = 'Editar';
+    btnEditar.setAttribute('aria-label', 'Editar veículo ' + veiculo.placa);
+    btnEditar.innerHTML = `
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/>
+        </svg>
+    `;
+    btnEditar.addEventListener('click', function () {
+        abrirModalEdicao(veiculo);
+    });
+
+    // Botão Excluir
+    const btnExcluir = document.createElement('button');
+    btnExcluir.type = 'button';
+    btnExcluir.className = 'btn-action delete';
+    btnExcluir.title = 'Excluir';
+    btnExcluir.setAttribute('aria-label', 'Excluir veículo ' + veiculo.placa);
+    btnExcluir.innerHTML = `
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
+        </svg>
+    `;
+    btnExcluir.addEventListener('click', function () {
+        confirmarExclusao(veiculo);
+    });
+
+    celula.appendChild(btnEditar);
+    celula.appendChild(btnExcluir);
+
+    return celula;
 }
 
 function criarCelula(texto) {
@@ -546,6 +634,12 @@ document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && !vehicleModal.classList.contains('hidden')) {
         fecharModalVeiculo();
     }
+    if (event.key === 'Escape' && !editVehicleModal.classList.contains('hidden')) {
+        fecharModalEdicao();
+    }
+    if (event.key === 'Escape' && !deleteConfirmModal.classList.contains('hidden')) {
+        fecharModalConfirmacaoExclusao();
+    }
 });
 
 
@@ -612,6 +706,212 @@ vehicleForm.addEventListener('submit', async function (event) {
         saveVehicleBtn.textContent = 'SALVAR';
     }
 });
+
+
+/* ----------------------------------------------------------------------
+   6b. EDIÇÃO DE VEÍCULO (JANELA MODAL)
+   ------------------------------------------------------------------------
+   PATCH /api/veiculos/{id}. O backend valida apenas os campos enviados
+   e recusa duplicidade (HTTP 409). O front preenche o formulário com
+   os dados atuais e envia apenas o que foi alterado.
+---------------------------------------------------------------------- */
+
+function abrirModalEdicao(veiculo) {
+    editVehicleForm.reset();
+    limparErrosDoModalEdicao();
+    editVeiId.value = veiculo.id;
+    editVeiPlaca.value = veiculo.placa;
+    editVeiChassi.value = veiculo.chassi;
+    editVeiRenavam.value = veiculo.renavam || '';
+    editVeiMarca.value = veiculo.marca;
+    editVeiModelo.value = veiculo.modelo;
+    editVeiCor.value = veiculo.cor;
+    editVeiAno.value = veiculo.ano;
+    editVeiProprietario.value = veiculo.proprietario;
+    editVeiCpfCnpj.value = veiculo.cpf_cnpj;
+    editVeiObservacoes.value = veiculo.observacoes || '';
+    editVehicleModal.classList.remove('hidden');
+    editVeiPlaca.focus();
+}
+
+function fecharModalEdicao() {
+    editVehicleModal.classList.add('hidden');
+}
+
+function limparErrosDoModalEdicao() {
+    editVehicleError.textContent = '';
+    editVehicleError.classList.add('hidden');
+
+    Object.keys(CAMPOS_DO_EDIT_VEICULO).forEach(function (campo) {
+        const input = CAMPOS_DO_EDIT_VEICULO[campo];
+        input.classList.remove('input-invalido');
+        input.removeAttribute('title');
+    });
+}
+
+function mostrarErroDoModalEdicao(mensagem, errosPorCampo) {
+    editVehicleError.textContent = mensagem;
+    editVehicleError.classList.remove('hidden');
+
+    if (!errosPorCampo) return;
+
+    Object.keys(errosPorCampo).forEach(function (campo) {
+        const input = CAMPOS_DO_EDIT_VEICULO[campo];
+        if (!input) return;
+        input.classList.add('input-invalido');
+        input.title = errosPorCampo[campo];
+    });
+}
+
+closeEditVehicleModalBtn.addEventListener('click', fecharModalEdicao);
+cancelEditVehicleBtn.addEventListener('click', fecharModalEdicao);
+
+editVehicleModal.addEventListener('click', function (event) {
+    if (event.target === editVehicleModal) fecharModalEdicao();
+});
+
+editVehicleForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+
+    if (salvandoEdicao) return;
+
+    limparErrosDoModalEdicao();
+
+    const id = Number(editVeiId.value);
+    const dados = {
+        placa: editVeiPlaca.value.trim(),
+        chassi: editVeiChassi.value.trim(),
+        renavam: editVeiRenavam.value.trim() || null,
+        marca: editVeiMarca.value.trim(),
+        modelo: editVeiModelo.value.trim(),
+        cor: editVeiCor.value.trim(),
+        ano: editVeiAno.value.trim() === '' ? null : Number(editVeiAno.value),
+        proprietario: editVeiProprietario.value.trim(),
+        cpf_cnpj: editVeiCpfCnpj.value.trim(),
+        observacoes: editVeiObservacoes.value.trim() || null,
+    };
+
+    // Remove campos que não foram alterados (opcional: envia só o que mudou)
+    // Para simplificar, enviamos todos os campos preenchidos.
+
+    const obrigatorios = ['placa', 'chassi', 'marca', 'modelo', 'cor', 'ano', 'proprietario', 'cpf_cnpj'];
+    const faltando = obrigatorios.filter(function (campo) {
+        return dados[campo] === null || dados[campo] === '';
+    });
+
+    if (faltando.length > 0) {
+        const erros = {};
+        faltando.forEach(function (campo) {
+            erros[campo] = 'Campo obrigatório.';
+        });
+        mostrarErroDoModalEdicao('Preencha todos os campos obrigatórios (*).', erros);
+        return;
+    }
+
+    salvandoEdicao = true;
+    saveEditVehicleBtn.disabled = true;
+    saveEditVehicleBtn.textContent = 'SALVANDO...';
+
+    try {
+        const atualizado = await API.atualizarVeiculo(id, dados);
+
+        fecharModalEdicao();
+
+        // Atualiza a pesquisa para refletir a edição
+        await pesquisarVeiculos(paginaAtual);
+        mostrarFeedback('Veículo ' + atualizado.placa + ' atualizado com sucesso.', 'sucesso');
+    } catch (erro) {
+        mostrarErroDoModalEdicao(erro.message, erro.errosPorCampo);
+    } finally {
+        salvandoEdicao = false;
+        saveEditVehicleBtn.disabled = false;
+        saveEditVehicleBtn.textContent = 'SALVAR ALTERAÇÕES';
+    }
+});
+
+
+/* ----------------------------------------------------------------------
+   6c. EXCLUSÃO DE VEÍCULO (MODAL PERSONALIZADO)
+   ------------------------------------------------------------------------
+   DELETE /api/veiculos/{id}. Usa um modal tematizado com backdrop blur
+   em vez do confirm() nativo do navegador.
+---------------------------------------------------------------------- */
+
+function abrirModalConfirmacaoExclusao(veiculo) {
+    veiculoParaExcluir = veiculo;
+
+    // Preenche os detalhes do veículo no modal
+    deleteConfirmDetails.innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Placa</span>
+            <span class="detail-value">${veiculo.placa}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Chassi</span>
+            <span class="detail-value">${veiculo.chassi}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Marca / Modelo</span>
+            <span class="detail-value">${veiculo.marca} ${veiculo.modelo}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Proprietário</span>
+            <span class="detail-value">${veiculo.proprietario}</span>
+        </div>
+    `;
+
+    // Adiciona classe de blur ao backdrop
+    deleteConfirmModal.classList.add('blur-backdrop');
+    deleteConfirmModal.classList.remove('hidden');
+}
+
+function fecharModalConfirmacaoExclusao() {
+    deleteConfirmModal.classList.add('hidden');
+    deleteConfirmModal.classList.remove('blur-backdrop');
+    veiculoParaExcluir = null;
+}
+
+function confirmarExclusao(veiculo) {
+    abrirModalConfirmacaoExclusao(veiculo);
+}
+
+async function excluirVeiculoConfirmado() {
+    if (!veiculoParaExcluir || removendoVeiculo) return;
+
+    const veiculo = veiculoParaExcluir;
+    const id = veiculo.id;
+    const placa = veiculo.placa;
+
+    fecharModalConfirmacaoExclusao();
+
+    removendoVeiculo = true;
+    mostrarFeedback('Excluindo veículo ' + placa + '...', 'info');
+
+    try {
+        await API.removerVeiculo(id);
+
+        // Atualiza a pesquisa para refletir a exclusão
+        await pesquisarVeiculos(paginaAtual);
+        mostrarFeedback('Veículo ' + placa + ' excluído com sucesso.', 'sucesso');
+    } catch (erro) {
+        mostrarFeedback(erro.message, 'erro');
+    } finally {
+        removendoVeiculo = false;
+    }
+}
+
+// Event listeners do modal de confirmação de exclusão
+closeDeleteConfirmModalBtn.addEventListener('click', fecharModalConfirmacaoExclusao);
+cancelDeleteConfirmBtn.addEventListener('click', fecharModalConfirmacaoExclusao);
+confirmDeleteBtn.addEventListener('click', excluirVeiculoConfirmado);
+
+// Fecha ao clicar no fundo (backdrop) ou pressionar ESC
+deleteConfirmModal.addEventListener('click', function (event) {
+    if (event.target === deleteConfirmModal) fecharModalConfirmacaoExclusao();
+});
+
+// Adiciona ESC para fechar o modal de confirmação (já existe listener global de keydown,
+// vamos adicionar a verificação lá)
 
 
 /* ----------------------------------------------------------------------

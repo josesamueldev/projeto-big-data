@@ -92,6 +92,57 @@ def obter(veiculo_id: int) -> dict | None:
 
 
 # ===========================================================================
+# ATUALIZAÇÃO
+# ===========================================================================
+
+def atualizar(veiculo_id: int, dados: dict) -> dict | None:
+    """Atualiza um veículo existente.
+
+    Espera um dicionário com os campos a atualizar (já validados/normalizados).
+    Retorna o registro atualizado ou None se o veículo não existir.
+    """
+    # Filtra apenas campos que vieram no payload (permite atualização parcial)
+    campos = [c for c in CAMPOS_VEICULO if c in dados]
+    if not campos:
+        return obter(veiculo_id)
+
+    set_sql = ", ".join(f"{c} = ?" for c in campos)
+    valores = [dados[c] for c in campos]
+    valores.append(veiculo_id)
+
+    with closing(get_connection()) as conn:
+        try:
+            cursor = conn.execute(
+                f"UPDATE veiculo SET {set_sql}, atualizado_em = datetime('now') "
+                f"WHERE id = ?",
+                valores,
+            )
+            conn.commit()
+        except sqlite3.IntegrityError as exc:
+            conn.rollback()
+            _capturar_duplicidade(exc)
+
+    if cursor.rowcount == 0:
+        return None
+    return obter(veiculo_id)
+
+
+# ===========================================================================
+# EXCLUSÃO
+# ===========================================================================
+
+def remover(veiculo_id: int) -> bool:
+    """Remove um veículo pelo id.
+
+    Retorna True se removeu, False se o veículo não existia.
+    """
+    with closing(get_connection()) as conn:
+        cursor = conn.execute("DELETE FROM veiculo WHERE id = ?", (veiculo_id,))
+        conn.commit()
+    return cursor.rowcount > 0
+
+
+# ===========================================================================
 # PESQUISA
 # ===========================================================================
 

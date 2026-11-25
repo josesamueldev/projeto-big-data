@@ -591,6 +591,56 @@ textarea:focus {
     background-color: var(--color-input-bg);
 }
 
+/* Coluna de ações: largura fixa para os botões não variarem */
+.results-table th.acoes-col,
+.results-table td.acoes-col {
+    width: 120px;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Botões de ação dentro da tabela */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-action:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.btn-action.delete:hover {
+    background-color: var(--color-danger);
+    border-color: var(--color-danger);
+    color: #ffffff;
+}
+
+.btn-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Feedback visual ao focar botão de ação via teclado */
+.btn-action:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.3);
+}
+
+.btn-action.delete:focus {
+    box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.3);
+}
+
 
 /* ----------------------------------------------------------------------
    9. BOTÃO FLUTUANTE DE AJUDA + RODAPÉ FIXO
@@ -895,6 +945,141 @@ textarea {
 .input-invalido {
     border-color: var(--color-danger) !important;
     background-color: #fdf1f0 !important;
+}
+
+/* ===========================================================================
+   12b. MODAL DE CONFIRMAÇÃO (EXCLUSÃO)
+   --------------------------------------------------------------------------
+   Variante do modal com backdrop blur (fundo desfocado) e layout simplificado
+   para confirmações de ações destrutivas.
+=========================================================================== */
+
+/* Backdrop com blur — fica por cima de tudo, desfoca o conteúdo atrás */
+.modal-backdrop.blur-backdrop {
+    background-color: rgba(15, 35, 60, 0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Card de confirmação: mais estreito, sem scroll interno */
+.modal-card--confirm {
+    max-width: 420px;
+    padding: 28px 24px;
+    text-align: center;
+}
+
+/* Ícone de aviso no topo do modal de confirmação */
+.confirm-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.confirm-message {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.confirm-details {
+    background-color: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    text-align: left;
+}
+
+.confirm-details .detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.confirm-details .detail-row:last-child {
+    border-bottom: none;
+}
+
+.confirm-details .detail-label {
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.confirm-details .detail-value {
+    font-weight: 500;
+    color: var(--color-text);
+    word-break: break-all;
+}
+
+.confirm-warning {
+    font-size: 0.8rem;
+    color: var(--color-danger);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Ações do modal de confirmação: botões lado a lado, "Excluir" à direita */
+.confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.confirm-actions .btn-secondary {
+    flex: 1;
+    max-width: 140px;
+}
+
+.confirm-actions .btn-danger {
+    flex: 1;
+    max-width: 140px;
+}
+
+/* Botão de perigo (vermelho) — para ações destrutivas */
+.btn-danger {
+    background-color: var(--color-danger);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.btn-danger:hover {
+    background-color: #a81e1e;
+}
+
+.btn-danger:active {
+    transform: scale(0.98);
+}
+
+.btn-danger:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.35);
 }
 
 @media (max-width: 640px) {

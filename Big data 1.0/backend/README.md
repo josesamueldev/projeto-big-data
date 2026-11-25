@@ -46,15 +46,14 @@ Na primeira subida o banco (`backend/data/app.db`) é criado e semeado com
 | GET | `/api/health` | Status (público) |
 | POST | `/api/auth/login` | Login → token JWT |
 | GET | `/api/auth/me` | Usuário logado |
-| POST | `/api/veiculos` | Registrar veículo |
+| POST | `/api/veiculos` | Registrar veículo (201 / 409 / 422) |
 | GET | `/api/veiculos` | Pesquisar (filtros + paginação) |
 | GET | `/api/veiculos/estatisticas` | Totais gerais |
 | GET | `/api/veiculos/{id}` | Detalhe |
+| PATCH | `/api/veiculos/{id}` | Atualizar veículo (200 / 404 / 409 / 422) |
+| DELETE | `/api/veiculos/{id}` | Remover veículo (204 / 404) |
 
 Todos os endpoints de veículos exigem `Authorization: Bearer <token>`.
-
-> A API expõe apenas o que o front-end usa hoje. Edição (`PATCH`) e exclusão
-> (`DELETE`) de veículos serão adicionados junto com as telas correspondentes.
 
 ### Filtros da pesquisa
 
@@ -96,8 +95,8 @@ py -m pytest -v
 
 Cobrem: login e proteção por token, validação de placa/chassi/ano/CPF-CNPJ,
 registro, duplicidade (409), detalhe, filtros combinados, pesquisa
-parcial (início/meio/fim), ausência de resultado e paginação. Também
-confirmam que `PATCH` e `DELETE` continuam fora da API (HTTP 405).
+parcial (início/meio/fim), ausência de resultado, paginação, **atualização
+parcial (`PATCH`) com validação de duplicidade**, e **exclusão (`DELETE`)**.
 
 ## Teste de estresse (Fase 4)
 
@@ -109,6 +108,9 @@ py scripts/gerar_dados.py --qtd 100000
 
 # Mede tempo de resposta de 3 cenários (n repetições)
 py scripts/stress_test.py --n 50
+
+# Antes de publicar no GitHub: reduz o banco e compacta o arquivo
+py scripts/reduzir_dados.py --manter 80000
 ```
 
 Saída típica: média, p50, p95, p99 e máximo por cenário. A busca exata por
@@ -193,6 +195,7 @@ navegador → routers (HTTP) → schemas (validação) → services (regra) → 
 |---|---|
 | `gerar_dados.py` | Gera a massa simulada (placas, chassis, CPFs e nomes válidos) e insere em lote no banco. Atende à Fase 4 do documento. |
 | `stress_test.py` | Mede o tempo de resposta real da API em três cenários (placa exata, filtro por cor, pesquisa parcial) e imprime média, p50, p95, p99 e máximo. |
+| `reduzir_dados.py` | Apaga parte dos registros simulados (preservando os 6 do seed) e compacta o arquivo com `VACUUM`. Use antes de publicar no GitHub para manter o banco pequeno. |
 
 ### Pasta `tests/` (testes automatizados)
 
@@ -242,7 +245,7 @@ HTTP); `script.js` cuida apenas das telas. Detalhes no
 
 ## Próximos passos
 
-1. Telas de edição e exclusão de veículos; com elas, reativar `PATCH` e
-   `DELETE` na API (hoje fora, para expor só o que o front usa).
+1. ~~Telas de edição e exclusão de veículos; com elas, reativar `PATCH` e
+   `DELETE` na API (hoje fora, para expor só o que o front usa).~~ ✅ **Concluído**
 2. Migrar para PostgreSQL quando o volume crescer.
 3. Perfis de usuário (admin/operador) e auditoria de consultas.

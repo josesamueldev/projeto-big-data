@@ -344,6 +344,7 @@
                                     <th>Cor</th>
                                     <th>Ano</th>
                                     <th>Proprietário</th>
+                                    <th class="acoes-col">Ações</th>
                                 </tr>
                             </thead>
                             <!-- O <tbody> começa vazio de propósito: cada linha
@@ -453,6 +454,116 @@
                     <button type="submit" class="btn-primary btn-full" id="saveVehicleBtn">Salvar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ========================================================================
+         JANELA MODAL DE EDIÇÃO DE VEÍCULO
+         Similar ao modal de cadastro, mas preenche os campos com os dados
+         do veículo selecionado e envia PATCH para a API.
+    ========================================================================= -->
+    <div class="modal-backdrop hidden" id="editVehicleModal">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editVehicleModalTitle">
+            <div class="modal-header">
+                <h2 id="editVehicleModalTitle">Editar Veículo</h2>
+                <button type="button" class="modal-close" id="closeEditVehicleModal" aria-label="Fechar">&times;</button>
+            </div>
+
+            <form id="editVehicleForm" novalidate>
+                <p class="modal-error hidden" id="editVehicleError"></p>
+
+                <!-- ID do veículo sendo editado (campo oculto) -->
+                <input type="hidden" id="editVeiId" name="id">
+
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label for="editVeiPlaca">PLACA *</label>
+                        <input type="text" id="editVeiPlaca" placeholder="ABC-1234 ou ABC1D23" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiChassi">CHASSI / VIN *</label>
+                        <input type="text" id="editVeiChassi" placeholder="17 caracteres" maxlength="17" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiMarca">MARCA *</label>
+                        <input type="text" id="editVeiMarca" placeholder="ex: Fiat" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiModelo">MODELO *</label>
+                        <input type="text" id="editVeiModelo" placeholder="ex: Uno Mille 1.0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiCor">COR *</label>
+                        <input type="text" id="editVeiCor" placeholder="ex: Prata" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiAno">ANO *</label>
+                        <input type="number" id="editVeiAno" placeholder="ex: 2022" min="1886" max="2100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiProprietario">PROPRIETÁRIO *</label>
+                        <input type="text" id="editVeiProprietario" placeholder="Nome completo ou razão social" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editVeiCpfCnpj">CPF / CNPJ *</label>
+                        <input type="text" id="editVeiCpfCnpj" placeholder="ex: 000.000.000-00" required>
+                    </div>
+
+                    <div class="form-group form-group--full">
+                        <label for="editVeiRenavam">RENAVAM</label>
+                        <input type="text" id="editVeiRenavam" placeholder="opcional — 9 a 11 dígitos">
+                    </div>
+
+                    <div class="form-group form-group--full">
+                        <label for="editVeiObservacoes">OBSERVAÇÕES</label>
+                        <textarea id="editVeiObservacoes" rows="3" maxlength="500"
+                                  placeholder="opcional — anotações livres"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary btn-full" id="cancelEditVehicleBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary btn-full" id="saveEditVehicleBtn">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================================
+         JANELA MODAL DE CONFIRMAÇÃO DE EXCLUSÃO
+         Substitui o confirm() nativo do navegador por um modal tematizado,
+         com fundo desfocado (backdrop blur) e centralizado na tela.
+    ========================================================================= -->
+    <div class="modal-backdrop hidden" id="deleteConfirmModal">
+        <div class="modal-card modal-card--confirm" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+            <div class="modal-header">
+                <h2 id="deleteConfirmTitle">Confirmar Exclusão</h2>
+                <button type="button" class="modal-close" id="closeDeleteConfirmModal" aria-label="Fechar">&times;</button>
+            </div>
+
+            <div class="confirm-content">
+                <div class="confirm-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="20" fill="#fdecea" stroke="#f5c2c0" stroke-width="2"/>
+                        <path d="M16 24 L22 30 L32 18" fill="none" stroke="#c62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <p class="confirm-message">Tem certeza que deseja excluir este veículo?</p>
+                <div class="confirm-details" id="deleteConfirmDetails"></div>
+                <p class="confirm-warning">Esta ação não pode ser desfeita.</p>
+            </div>
+
+            <div class="modal-actions confirm-actions">
+                <button type="button" class="btn-secondary btn-full" id="cancelDeleteConfirmBtn">Cancelar</button>
+                <button type="button" class="btn-danger btn-full" id="confirmDeleteBtn">Sim, Excluir</button>
+            </div>
         </div>
     </div>
 
